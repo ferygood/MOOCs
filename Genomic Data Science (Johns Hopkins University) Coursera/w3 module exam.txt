@@ -1,0 +1,174 @@
+Apply to questions 1 - 5:
+Generate a bowtie2 index of the wu_0_A genome using bowtie2-build, with the prefix 'wu_0'.
+
+$bowtie2 --version
+>version 2.3.4.1
+>64-bit
+
+$mkdir wu_0
+$bowtie2-build wu_0.v7.fas wu_0/wu_0
+$ls
+>wu_0.1.bt2 wu_0.2.bt2 wu_0.3.bt2 wu_0.4.bt2 wu_0.rev.1.bt2 wu_0.rev.2.bt2
+
+#1 How many sequences were in the genome?
+$grep -c "^>" wu_0.v7.fas
+>7
+
+
+#2 What was the name of the third sequence in the genome file? Give the name only, without the ">" sign.
+$cat wu_0.v7.fas | grep '>' | more
+>Chr1
+>Chr2
+>Chr3
+>Chr4
+>Chr5
+>chloroplast
+>mitochondria
+grep ¡§^>¡¨ wu_0.v7.fas | head -3 | tail -1
+>Chr3
+
+#3 What was the name of the last sequence in the genome file? Give the name only, without the ¡§>¡¨ sign.
+grep ¡§^>¡¨ wu_0.v7.fas | tail -1
+>mitochondria
+
+
+
+#4 How many index files did the operation create?
+# recall the result from #1
+>6 
+
+
+#5 What is the 3-character extension for the index files created?
+>bt2
+or
+$ls wu_0/
+
+¡°Apply to questions 6 - 14:
+Run bowtie2 to align the reads to the genome, under two scenarios: 
+first, to report only full-length matches of the reads; 
+and second, to allow partial (local) matches. 
+All other parameters are as set by default.
+
+
+
+#6 How many reads were in the original fastq file?
+$wc -l wu_0_A_wgs.fastq
+>589416 wu_0_A_wgs.fastq
+#remeber to divide 4
+>147354
+
+
+#centos 6.1
+#bowtie2 (2.2.5)
+#for question 7-14
+
+(X)#7 How many matches (alignments) were reported for the original (full-match) setting? Exclude lines in the file containing unmapped reads.
+$bowtie2 -x wu_0/wu_0 wu_0_A_wgs.fastq -S map.bt2.sam
+>147354 reads; of these:
+   147354 (100.00%) were unpaired; of these:
+     9635 (6.54%) aligned 0 times
+     93780 (63.64%) aligned exactly 1 time
+     43939 (29.82%) aligned > 1 times
+ 93.46% overall alignment rate
+>93870+43939=137719
+#transform to bam file
+$samtools view -bT .fa map.bt2.sam > map.bt2.bam
+
+
+(X)#8 How many matches (alignments) were reported with the local-match setting? Exclude lines in the file containing unmapped reads.
+$bowtie2 --local -x wu_0/wu_0 wu_0_A_wgs.fastq -S map.local.bt2.sam
+> 147354 reads; of these:
+    147354 (100.00%) were unpaired; of these:
+       6310 (4.63%) aligned 0 times
+      84939 (60.35%) aligned exactly 1 time
+      56105 (35.01%) aligned >1 times
+  95.72% overall alignment rate
+>84939+56105=141044
+
+
+#9 How many reads were mapped in the scenario in Question 7?
+>137719
+
+#10 How many reads were mapped in the scenario in Question 8?
+>141044
+
+#11 How many reads had multiple matches in the scenario in Question 7? You can find this in the bowtie2 summary; note that by default bowtie2 only reports the best match for each read.
+>43939
+
+#12 How many reads had multiple matches in the scenario in Question 8? Use the format above. You can find this in the bowtie2 summary; note that by default bowtie2 only reports the best match for each read.
+>56105
+
+(X)#13 How many alignments contained insertions and/or deletions, in the scenario in Question 7?
+$samtools view map.bt2.sam | cut -f12- | grep -v 'NM:i:0' | wc -l
+> 40875
+
+
+(X)#14 How many alignments contained insertions and/ or deletions, in the scenario in Question 8?
+$samtools view map.bt2.sam | cut -f12- | grep -v 'NM:i:0' | wc -l
+> 35770
+
+
+Convert sam to bam and sorted
+$samtools view -bS map.bt2.sam > map.bt2.bam
+$samtools sort map.bt2.bam -o map.bt2.sorted.bam
+$samtools mpileup -uf wu_0.v7.fas map.bt2.sorted.bam | bcftools view -Ov - > map.raw.bcf
+$bcftools view map.raw.bcf
+
+#15 How many entries were reported for Chr3?
+$bcftools view map.raw.bcf | grep -v '^#' | cut -f1 | grep -c '^Chr3'
+>360295
+
+
+#16 How many entries have 'A' as the corresponding genome letter?
+$bcftools view map.raw.bcf | grep -v '^#' | cut -f4 | grep -P '^A$' | wc -l
+>1150980
+
+
+#17 How many entries have exactly 20 supporting reads (read depth)?
+$bcftools view map.raw.bcf | grep -v '^#' | grep -c 'DP=20'
+>1816
+
+
+#18 How many entries represent indels?
+$bcftools view map.raw.bcf | grep -v "^#' | grep -c 'INDEL'
+>19725672
+
+
+#19 How many entries are reported for position 175672 on Chr1?
+$bctools view map.raw.bcf | grep -v '^#' | cut -f1,2 | grep Chr1 | grep -c '^175672$'
+>2
+
+
+$bcftools view map.raw.bcf > map.raw.vcf
+
+$samtools index map.bt2.sorted.bam
+$samtools mpileup -g -f wu_0.v7.fas map.bt2.sorted.bam > variantcall.bcf
+$bcftools call -v -m -O v variantcall.bcf > variantcall.vcf
+
+
+#20 How many variants are called on Chr3?
+$cat variantcall.vcf | grep -v "^#" | cut -f1 | sort | uniq -c | grep 'Chr3'
+>398
+
+
+#21 How many variants represent an A->T SNP? If useful, you can use 'grp -P' to allow tabular spaces in the search term.
+$cat variantcall.vcf | grep -v "^#" | cut -f4,5 | grep -P '^A\tT$' | wc -l
+>392
+
+
+#22 How many entries are indels?
+$cat variantcall.vcf | grep -v '^#' | grep -c 'INDEL'
+>320
+
+
+#23 How many entries have precisely 20 supporting reads (read depth)?
+$cat variantcall.vcf | grep -v '^#' | grep -c 'DP=20'
+>2
+
+
+#24 What type of variant (i.e., SNP or INDEL) is called at position 11937923 on Chr3?
+$cat variantcall.vcf | grep -v '^#' | grep 'Chr3' | grep '11937923'
+>SNP
+
+
+
