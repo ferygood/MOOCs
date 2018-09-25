@@ -1,4 +1,4 @@
-#samtools --version
+$samtools --version
 >samtools 1.7
 >Using htslib 1.7-2
 >Copyright (C) 2018 Genome Research Ltd.
@@ -79,7 +79,8 @@ $samtools view athal_wu_0_A.bam | cut -f6 | grep -c 'N'
 
 #11 How many sequences are in the genome file?
 #This information can be found in the header of the BAM file. 
-#Starting with the original BAM file, we use samtools to display the header information and count the number of lines describing the sequences in the reference genome:
+#Starting with the original BAM file, we use samtools to display the header information and count the number of lines describing the sequences 
+#in the reference genome:
 $samtools view -H athal_wu_0_A.bam | grep -c "SN:"
 >7
 
@@ -109,22 +110,33 @@ $bedtools --version
 >bedtools v2.26.0
 
 #16 How many overlaps (each overlap is reported on one line) are reported?
-#We start by running BEDtools on the alignment set restricted to the specified region (Chr3:11777000-11794000) and the GTF annotation file listed above. To allow the input to be read directly from the BAM file, we use the option ．-abam・; in this case we will need to also specify ．-bed・ for the BAM alignment information to be shown in BED column format in the output:
+#We start by running BEDtools on the alignment set restricted to the specified region (Chr3:11777000-11794000) and the GTF annotation file listed above. 
+#To allow the input to be read directly from the BAM file, we use the option ．-abam・; in this case we will need to also specify ．-bed・ for the BAM alignment 
+#information to be shown in BED column format in the output:
 $bedtools intersect -abam athal_wu_0_A.region.bam -b athal_wu_0_A_annot.gtf -bed -wo > overlaps.bed
-#This will create a file with the following format: Columns 1-12 : alignment information, converted to BED format Columns 13-21 : annotation (exon) information, from the GTF file Column 22 : length of the overlapAlternatively, we could first convert the BAM file to BED format using ．bedtools bamtobed・ then use the resulting file in the ．bedtools intersect・ command. To answer the question, the number of overlaps reported is precisely the number of lines in the file (because only entries in the first file that have overlaps in file B are reported, according to the option ．-wo・):
+
+#This will create a file with the following format: Columns 1-12 : alignment information, converted to BED format Columns 13-21 : annotation (exon) information, 
+#from the GTF file Column 22 : length of the overlapAlternatively, we could first convert the BAM file to BED format using ．bedtools bamtobed・ 
+#then use the resulting file in the ．bedtools intersect・ command. To answer the question, the number of overlaps reported is precisely the number of lines in 
+#the file (because only entries in the first file that have overlaps in file B are reported, according to the option ．-wo・):
 $wc -l overlaps.bed
 >3101 overlaps.bed
 
 
 
 (x)#17 How many of these are 10 bases or longer?
-#The size of the overlap is listed in column 22 of the ．overlaps.bed・ file. To determine those longer than 10 bases, we extract the column, sort numerically in decreasing order, and simply determine by visual inspection of the file the number of such records. For instance, in ．vim・ we search for the first line listing ．9・ (．:/9・), then determine its line number (Ctrl+g). Alternatively, one can use grep with option ．-n・ to list the lines and corresponding line numbers:
+#The size of the overlap is listed in column 22 of the ．overlaps.bed・ file. To determine those longer than 10 bases, we extract the column, 
+#sort numerically in decreasing order, and simply determine by visual inspection of the file the number of such records. For instance, in ．vim・ 
+#we search for the first line listing ．9・ (．:/9・), then determine its line number (Ctrl+g). Alternatively, one can use grep with option ．-n・ to list 
+#the lines and corresponding line numbers:
 $cut -f22 overlaps.bed | sort -n | grep -c '^9'
 >25
 
 #18 How many alignments overlap the annotations?
 #column 1-12 define the alignments
-#Potential pitfalls: Multiple reads may map at the same coordinates, so the information in columns 1-3 is insufficient. The minimum information needed to define the alignments is contained in columns 1-5, which include the read ID and the flag, specifying whether this is read 1 or read 2 in a pair with the same read ID).
+#Potential pitfalls: Multiple reads may map at the same coordinates, so the information in columns 1-3 is insufficient. The minimum information needed to 
+#define the alignments is contained in columns 1-5, which include the read ID and the flag, specifying whether this is read 1 or read 2 in a pair with the 
+#same read ID).
 $cut -f1-12 overlaps.bed | sort -u | wc -l
 >3101
 
@@ -136,7 +148,8 @@ $cut -f13-21 overlaps.bed | sort -u | wc -l
 
 
 #20 If you were to convert the transcript annotations in the file "athal_wu_0_A_annot.gtf" into BED format, how many BED records would be generated?
-#This question simply asks for the number of transcripts in the annotation file, since the BED format would represent each transcript on one line. This information can be obtained from column 9 in the GTF file:
+#This question simply asks for the number of transcripts in the annotation file, since the BED format would represent each transcript on one line. 
+#This information can be obtained from column 9 in the GTF file:
 $cut -f9 athal_wu_0_A.annot.gtf | cut -d '' -f1,2 | sort -u | wc -l
 >4
  
