@@ -1,4 +1,4 @@
-#Count Based NRA-seq analysis
+#Count Based RNA-seq analysis
 biocLite(c("DESeq2", "edgeR"))
 #count_based models built on the negative binomial distribution, edgeR, DESeq, DESeq2
 #The Data
