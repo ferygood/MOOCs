@@ -1,6 +1,7 @@
 #!usr/bin/python
 #coding=utf-8
-# Rosalind_Python_Village
+#python 3.6.5
+#Rosalind_Python_Village
 
 # 1. Installing Python
 import this
@@ -77,13 +78,3 @@ print (dict)
 
 for k,v in dict.items():
     print(k,v)
-
-               
-                
-                
-            
-    
-    
-
-    
-    
